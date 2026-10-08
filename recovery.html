@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#020000">
+
+<title>Security Recovery Console</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #020303;
+    color: #00ff66;
+    font-family: Consolas, "Courier New", monospace;
+    overflow: hidden;
+}
+
+body {
+    animation: flicker 6s infinite;
+}
+
+@keyframes flicker {
+    0%, 95%, 100% { filter: none; }
+    96% { filter: brightness(1.4); }
+    97% { filter: brightness(.7); }
+    98% { filter: brightness(1.15); }
+}
+
+/* =========================
+   START SCREEN
+========================= */
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background:
+        radial-gradient(circle at center, #180000 0%, #050000 45%, #000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 25px;
+}
+
+.startBox {
+    width: min(600px, 95%);
+    border: 2px solid #ff2020;
+    padding: 35px 25px;
+    box-shadow:
+        0 0 30px rgba(255,0,0,.35),
+        inset 0 0 30px rgba(255,0,0,.05);
+}
+
+.startWarning {
+    color: #ff2020;
+    font-size: clamp(32px, 8vw, 65px);
+    font-weight: bold;
+    animation: warningPulse 1s infinite;
+}
+
+@keyframes warningPulse {
+    50% {
+        opacity: .35;
+    }
+}
+
+.startText {
+    color: #ddd;
+    line-height: 1.7;
+    margin: 20px 0;
+}
+
+#startButton {
+    border: 2px solid #ff2020;
+    background: #190000;
+    color: #ff3030;
+    padding: 18px 35px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255,0,0,.25);
+}
+
+#startButton:active {
+    transform: scale(.96);
+}
+
+/* =========================
+   MAIN
+========================= */
+
+#app {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.top {
+    height: 65px;
+    border-bottom: 1px solid #17351f;
+    background: #050806;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+}
+
+.logo {
+    color: #ff2020;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.status {
+    color: #ff3030;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: .3; }
+}
+
+.main {
+    height: calc(100vh - 65px);
+    display: grid;
+    grid-template-columns: 270px 1fr 280px;
+}
+
+.left,
+.right {
+    padding: 20px;
+    background: #030604;
+}
+
+.left {
+    border-right: 1px solid #17351f;
+}
+
+.right {
+    border-left: 1px solid #17351f;
+}
+
+.panel {
+    border: 1px solid #164c29;
+    margin-bottom: 15px;
+    padding: 14px;
+    background: rgba(0,255,80,.025);
+}
+
+.panel h3 {
+    margin: 0 0 15px;
+    color: #ff3030;
+    font-size: 14px;
+}
+
+.metric {
+    margin: 12px 0;
+}
+
+.metric-title {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.bar {
+    height: 8px;
+    background: #101510;
+    border: 1px solid #183b22;
+}
+
+.bar span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: #00ff66;
+    transition: width .4s;
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center {
+    position: relative;
+    padding: 25px;
+    overflow: hidden;
+}
+
+.warning {
+    text-align: center;
+    color: #ff1f1f;
+    font-size: clamp(22px, 4vw, 45px);
+    font-weight: bold;
+    text-shadow: 0 0 15px red;
+    animation: danger 1.2s infinite;
+}
+
+@keyframes danger {
+    50% {
+        opacity: .4;
+    }
+}
+
+.subwarning {
+    text-align: center;
+    color: #ff8888;
+    margin-top: 5px;
+}
+
+.progress-area {
+    max-width: 800px;
+    margin: 35px auto 20px;
+}
+
+.progress-title {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.bigbar {
+    width: 100%;
+    height: 25px;
+    border: 1px solid #ff2020;
+    background: #160303;
+    box-shadow: 0 0 20px rgba(255,0,0,.2);
+}
+
+.bigbar span {
+    display: block;
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        #ff0000,
+        #ff5a00,
+        #ff0000
+    );
+    transition: width .5s;
+}
+
+.percent {
+    text-align: center;
+    font-size: 38px;
+    color: #ff3030;
+    margin-top: 10px;
+}
+
+/* =========================
+   TERMINAL
+========================= */
+
+.terminal {
+    max-width: 800px;
+    height: 230px;
+    margin: 20px auto;
+    border: 1px solid #18532b;
+    background: #010201;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.terminal-title {
+    color: white;
+    border-bottom: 1px solid #16351e;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+#lineContainer {
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* =========================
+   RIGHT
+========================= */
+
+.threat {
+    border: 1px solid #7a1010;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: rgba(255,0,0,.04);
+}
+
+.threat-title {
+    color: #ff3030;
+    font-weight: bold;
+}
+
+.threat-number {
+    font-size: 32px;
+    color: #ff2020;
+    margin-top: 10px;
+}
+
+.file-list {
+    height: 190px;
+    overflow: hidden;
+    font-size: 11px;
+    color: #aaa;
+}
+
+.file-list div {
+    margin: 5px 0;
+}
+
+/* =========================
+   BOTTOM
+========================= */
+
+.bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 35px;
+    background: #030403;
+    border-top: 1px solid #16351e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    font-size: 10px;
+    color: #55705d;
+}
+
+/* =========================
+   EMERGENCY
+========================= */
+
+.emergency {
+    position: fixed;
+    inset: 0;
+    background: rgba(80,0,0,.96);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    text-align: center;
+    padding: 20px;
+}
+
+.emergency-box {
+    border: 3px solid red;
+    padding: 40px 25px;
+    width: min(850px, 92%);
+    box-shadow: 0 0 80px red;
+    animation: emergencyPulse .7s infinite;
+}
+
+@keyframes emergencyPulse {
+    50% {
+        box-shadow: 0 0 20px red;
+    }
+}
+
+.emergency h1 {
+    color: white;
+    font-size: clamp(35px, 8vw, 75px);
+    margin: 0;
+}
+
+/* =========================
+   FINAL
+========================= */
+
+.final {
+    position: fixed;
+    inset: 0;
+    background: #020603;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.final-box {
+    max-width: 800px;
+    border: 2px solid #00ff66;
+    padding: 45px 25px;
+    box-shadow: 0 0 60px rgba(0,255,100,.2);
+}
+
+.final h1 {
+    font-size: clamp(45px, 10vw, 100px);
+    color: #00ff66;
+    margin: 0 0 20px;
+}
+
+.final p {
+    color: #baffca;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.final button {
+    margin-top: 25px;
+    padding: 13px 25px;
+    border: 1px solid #00ff66;
+    background: transparent;
+    color: #00ff66;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width: 900px) {
+
+    .main {
+        grid-template-columns: 1fr;
+    }
+
+    .left,
+    .right {
+        display: none;
+    }
+
+    .center {
+        padding: 15px;
+    }
+
+    .terminal {
+        height: 210px;
+    }
+
+    .top {
+        padding: 0 12px;
+    }
+
+    .logo {
+        font-size: 13px;
+    }
+
+    .status {
+        font-size: 10px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     FIRST-TAP SCREEN
+========================= -->
+
+<div id="startScreen">
+
+    <div class="startBox">
+
+        <div class="startWarning">
+            ⚠ WARNING ⚠
+        </div>
+
+        <div class="startText">
+            SECURITY RECOVERY CONSOLE<br><br>
+            A critical system diagnostic is ready.<br>
+            Press the button below to begin.
+        </div>
+
+        <button id="startButton">
+            START RECOVERY
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     MAIN SIMULATION
+========================= -->
+
+<div id="app">
+
+    <div class="top">
+        <div class="logo">
+            SECURITY RECOVERY CONSOLE v9.7
+        </div>
+
+        <div class="status">
+            ● CRITICAL SYSTEM STATE
+        </div>
+    </div>
+
+
+    <div class="main">
+
+        <!-- LEFT -->
+
+        <div class="left">
+
+            <div class="panel">
+
+                <h3>SYSTEM TELEMETRY</h3>
+
+                <div class="metric">
+
+                    <div class="metric-title">
+                        <span>CPU ACTIVITY</span>
+                        <span id="cpuText">0%</span>
+                    </div>
+
+                    <div class="bar">
+                        <span id="cpuBar"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <div class="metric-title">
+                        <span>MEMORY</span>
+                        <span id="ramText">0%</span>
+                    </div>
+
+                    <div class="bar">
+                        <span id="ramBar"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="metric">
+
+                    <div class="metric-title">
+                        <span>NETWORK</span>
+                        <span id="netText">0%</span>
+                    </div>
+
+                    <div class="bar">
+                        <span id="netBar"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h3>SECURITY STATUS</h3>
+
+                <div>
+                    Firewall:
+                    <span style="color:red">
+                        FAILED
+                    </span>
+                </div>
+
+                <br>
+
+                <div>
+                    Isolation:
+                    <span style="color:red">
+                        FAILED
+                    </span>
+                </div>
+
+                <br>
+
+                <div>
+                    Recovery:
+                    <span style="color:#ffb000">
+                        RUNNING
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CENTER -->
+
+        <div class="center">
+
+            <div class="warning">
+                ⚠ SYSTEM COMPROMISED ⚠
+            </div>
+
+            <div class="subwarning">
+                CRITICAL SECURITY RECOVERY PROCEDURE ACTIVE
+            </div>
+
+
+            <div class="progress-area">
+
+                <div class="progress-title">
+                    <span>RECOVERY PROCESS</span>
+                    <span id="stage">
+                        INITIALIZING...
+                    </span>
+                </div>
+
+                <div class="bigbar">
+                    <span id="mainProgress"></span>
+                </div>
+
+                <div class="percent">
+                    <span id="percent">0</span>%
+                </div>
+
+            </div>
+
+
+            <div class="terminal">
+
+                <div class="terminal-title">
+                    RECOVERY TERMINAL
+                </div>
+
+                <div id="lineContainer"></div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT -->
+
+        <div class="right">
+
+            <div class="threat">
+
+                <div class="threat-title">
+                    ACTIVE THREATS
+                </div>
+
+                <div class="threat-number"
+                     id="threats">
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="panel">
+
+                <h3>RECENT ACTIVITY</h3>
+
+                <div
+                    class="file-list"
+                    id="files">
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="bottom">
+
+        <span>
+            SECURE RECOVERY ENGINE
+        </span>
+
+        <span>
+            SESSION: ACTIVE
+        </span>
+
+        <span id="timer">
+            00:00
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     EMERGENCY SCREEN
+========================= -->
+
+<div class="emergency" id="emergency">
+
+    <div class="emergency-box">
+
+        <h1>
+            ⚠ CRITICAL FAILURE ⚠
+        </h1>
+
+        <p>
+            PRIMARY RECOVERY ROUTINE FAILED.
+        </p>
+
+        <p>
+            SECONDARY RECOVERY ROUTINE INITIALIZING...
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     FINAL REVEAL
+========================= -->
+
+<div class="final" id="final">
+
+    <div class="final-box">
+
+        <h1>
+            😂 PRANKED!
+        </h1>
+
+        <p>
+            Relax bro 😭
+        </p>
+
+        <p>
+            Your device is completely safe.
+        </p>
+
+        <p>
+            This was only a harmless browser simulation.
+        </p>
+
+        <p>
+            No files were accessed, encrypted, deleted,
+            uploaded, or modified.
+        </p>
+
+        <p>
+            You survived the fake cyber apocalypse. 💀
+        </p>
+
+        <button onclick="location.reload()">
+            RUN SIMULATION AGAIN
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================
+   SAFE SIMULATION
+   NO DEVICE ACCESS
+===================================== */
+
+const startScreen =
+    document.getElementById("startScreen");
+
+const startButton =
+    document.getElementById("startButton");
+
+const progress =
+    document.getElementById("mainProgress");
+
+const percent =
+    document.getElementById("percent");
+
+const stage =
+    document.getElementById("stage");
+
+const cpuBar =
+    document.getElementById("cpuBar");
+
+const ramBar =
+    document.getElementById("ramBar");
+
+const netBar =
+    document.getElementById("netBar");
+
+const cpuText =
+    document.getElementById("cpuText");
+
+const ramText =
+    document.getElementById("ramText");
+
+const netText =
+    document.getElementById("netText");
+
+const threats =
+    document.getElementById("threats");
+
+const timer =
+    document.getElementById("timer");
+
+const lineContainer =
+    document.getElementById("lineContainer");
+
+const files =
+    document.getElementById("files");
+
+const emergency =
+    document.getElementById("emergency");
+
+const final =
+    document.getElementById("final");
+
+
+/* =====================================
+   FAKE DATA
+===================================== */
+
+const fakeFiles = [
+    "user_profile_backup.dat",
+    "system_registry_shadow.bin",
+    "private_gallery_cache.tmp",
+    "messages_archive.db",
+    "documents_index.dat",
+    "browser_session_cache.sys",
+    "network_profile.old",
+    "media_library_backup.bin",
+    "system_preferences.dat",
+    "account_metadata.tmp",
+    "recovery_snapshot.img",
+    "application_cache.db",
+    "device_configuration.sys",
+    "secure_storage_index.dat",
+    "system_restore_point.bin",
+    "user_documents_archive.tmp",
+    "communication_cache.dat"
+];
+
+const terminalMessages = [
+    "[RECOVERY] Initializing security engine...",
+    "[SCAN] Analyzing suspicious activity...",
+    "[WARNING] Multiple anomalies detected.",
+    "[CORE] Isolating simulated threat environment...",
+    "[SCAN] Checking recovery sectors...",
+    "[SECURITY] Emergency protocol enabled.",
+    "[CORE] Building recovery map...",
+    "[WARNING] Unauthorized process pattern detected.",
+    "[RECOVERY] Attempting secondary recovery...",
+    "[SYSTEM] Reconstructing security state...",
+    "[SCAN] Deep diagnostic sequence active...",
+    "[CORE] Verifying recovery integrity...",
+    "[WARNING] Critical simulation threshold reached.",
+    "[RECOVERY] Continuing emergency procedure..."
+];
+
+const stages = [
+    "INITIALIZING...",
+    "SCANNING...",
+    "ANALYZING...",
+    "ISOLATING...",
+    "REBUILDING...",
+    "RECOVERING...",
+    "VERIFYING...",
+    "FINALIZING..."
+];
+
+
+/* =====================================
+   VOICE
+===================================== */
+
+function speak(text) {
+
+    if (!("speechSynthesis" in window)) {
+        return;
+    }
+
+    speechSynthesis.cancel();
+
+    const voice =
+        new SpeechSynthesisUtterance(text);
+
+    voice.rate = 0.62;
+    voice.pitch = 0.25;
+    voice.volume = 1;
+
+    speechSynthesis.speak(voice);
+}
+
+
+/* =====================================
+   FULLSCREEN
+===================================== */
+
+async function enterFullscreen() {
+
+    try {
+
+        if (!document.fullscreenElement &&
+            document.documentElement.requestFullscreen) {
+
+            await document.documentElement.requestFullscreen();
+
+        }
+
+    } catch (error) {
+
+        /* Some mobile browsers simply
+           don't support webpage fullscreen. */
+
+    }
+}
+
+
+/* =====================================
+   VIBRATION
+===================================== */
+
+function vibrate(pattern) {
+
+    if ("vibrate" in navigator) {
+
+        try {
+            navigator.vibrate(pattern);
+        } catch (e) {}
+
+    }
+}
+
+
+/* =====================================
+   TERMINAL
+===================================== */
+
+function addTerminalLine() {
+
+    const message =
+        terminalMessages[
+            Math.floor(
+                Math.random() *
+                terminalMessages.length
+            )
+        ];
+
+    const line =
+        document.createElement("div");
+
+    line.textContent =
+        message +
+        " " +
+        Math.random()
+            .toString(16)
+            .substring(2, 10)
+            .toUpperCase();
+
+    lineContainer.appendChild(line);
+
+    if (lineContainer.children.length > 10) {
+
+        lineContainer.removeChild(
+            lineContainer.firstChild
+        );
+
+    }
+}
+
+
+/* =====================================
+   FAKE FILE STREAM
+===================================== */
+
+function addFakeFile() {
+
+    const file =
+        fakeFiles[
+            Math.floor(
+                Math.random() *
+                fakeFiles.length
+            )
+        ];
+
+    const line =
+        document.createElement("div");
+
+    line.textContent =
+        "› analyzing: C:\\SYSTEM\\" +
+        file;
+
+    files.appendChild(line);
+
+    if (files.children.length > 11) {
+
+        files.removeChild(
+            files.firstChild
+        );
+
+    }
+}
+
+
+/* =====================================
+   FAKE METRICS
+===================================== */
+
+function updateMetrics(value) {
+
+    const cpu =
+        Math.min(
+            99,
+            Math.floor(
+                25 +
+                Math.random() * 70
+            )
+        );
+
+    const ram =
+        Math.min(
+            98,
+            Math.floor(
+                35 +
+                value * .5 +
+                Math.random() * 20
+            )
+        );
+
+    const net =
+        Math.min(
+            97,
+            Math.floor(
+                15 +
+                Math.random() * 80
+            )
+        );
+
+    cpuBar.style.width = cpu + "%";
+    ramBar.style.width = ram + "%";
+    netBar.style.width = net + "%";
+
+    cpuText.textContent = cpu + "%";
+    ramText.textContent = ram + "%";
+    netText.textContent = net + "%";
+}
+
+
+/* =====================================
+   TIMER
+===================================== */
+
+let startTime;
+
+function updateTimer() {
+
+    const elapsed =
+        Math.floor(
+            (Date.now() - startTime) / 1000
+        );
+
+    const minutes =
+        String(
+            Math.floor(elapsed / 60)
+        ).padStart(2, "0");
+
+    const seconds =
+        String(
+            elapsed % 60
+        ).padStart(2, "0");
+
+    timer.textContent =
+        minutes + ":" + seconds;
+}
+
+
+/* =====================================
+   SIMULATION
+===================================== */
+
+/*
+   About 12 minutes.
+
+   Everything is visual only.
+*/
+
+const duration =
+    12 * 60 * 1000;
+
+let simulationStart;
+let lastPercent = -1;
+
+function runSimulation() {
+
+    const elapsed =
+        Date.now() -
+        simulationStart;
+
+    const value =
+        Math.min(
+            100,
+            (elapsed / duration) * 100
+        );
+
+    const rounded =
+        Math.floor(value);
+
+    progress.style.width =
+        value + "%";
+
+    percent.textContent =
+        rounded;
+
+    const stageIndex =
+        Math.min(
+            stages.length - 1,
+            Math.floor(value / 13)
+        );
+
+    stage.textContent =
+        stages[stageIndex];
+
+    updateMetrics(value);
+    updateTimer();
+
+
+    if (rounded !== lastPercent) {
+
+        lastPercent = rounded;
+
+        addTerminalLine();
+        addFakeFile();
+
+        threats.textContent =
+            Math.floor(
+                7 +
+                value * 1.3 +
+                Math.random() * 15
+            );
+    }
+
+
+    /* DRAMATIC EVENTS */
+
+    if (rounded === 15) {
+
+        speak(
+            "Critical security warning. Unauthorized activity has been detected."
+        );
+
+        vibrate([300, 100, 300]);
+
+    }
+
+
+    if (rounded === 30) {
+
+        speak(
+            "Warning. System isolation protocol has failed."
+        );
+
+        vibrate([500, 150, 500]);
+
+    }
+
+
+    if (rounded === 50) {
+
+        emergency.style.display =
+            "flex";
+
+        speak(
+            "Critical failure. Secondary recovery protocol activated."
+        );
+
+        vibrate([
+            300,
+            100,
+            300,
+            100,
+            600
+        ]);
+
+        setTimeout(() => {
+
+            emergency.style.display =
+                "none";
+
+        }, 5000);
+
+    }
+
+
+    if (rounded === 72) {
+
+        speak(
+            "Recovery integrity is below safe operating threshold."
+        );
+
+    }
+
+
+    if (rounded === 90) {
+
+        speak(
+            "Final recovery sequence initiated."
+        );
+
+        vibrate([400, 100, 400]);
+
+    }
+
+
+    /* FINISH */
+
+    if (value >= 100) {
+
+        progress.style.width = "100%";
+        percent.textContent = "100";
+
+        stage.textContent =
+            "RECOVERY COMPLETE";
+
+        speak(
+            "Recovery process complete."
+        );
+
+        setTimeout(() => {
+
+            final.style.display =
+                "flex";
+
+        }, 3500);
+
+        return;
+    }
+
+
+    requestAnimationFrame(
+        runSimulation
+    );
+}
+
+
+/* =====================================
+   FIRST TAP
+===================================== */
+
+startButton.addEventListener(
+    "click",
+    async function() {
+
+        /* Fullscreen must be requested
+           from a user interaction. */
+
+        await enterFullscreen();
+
+        /* Hide start screen */
+
+        startScreen.style.display =
+            "none";
+
+        /* Strong opening vibration */
+
+        vibrate([
+            250,
+            100,
+            250
+        ]);
+
+        /* Start voice */
+
+        speak(
+            "Critical security warning. Recovery console activated."
+        );
+
+        /* Start simulation */
+
+        startTime =
+            Date.now();
+
+        simulationStart =
+            Date.now();
+
+        for (let i = 0; i < 5; i++) {
+
+            addTerminalLine();
+            addFakeFile();
+
+        }
+
+        runSimulation();
+
+    }
+);
+
+</script>
+
+</body>
+</html>
